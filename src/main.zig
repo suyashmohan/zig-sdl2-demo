@@ -3,9 +3,8 @@ const c = @cImport({
     @cInclude("stb_image.h");
 });
 
-const WIDTH = 320;
-const HEIGHT = 180;
-const SCALE = 4;
+const WIDTH = 1280;
+const HEIGHT = 720;
 
 pub fn main() !void {
     if (c.SDL_Init(c.SDL_INIT_EVERYTHING) != 0) {
@@ -14,7 +13,7 @@ pub fn main() !void {
     }
     defer c.SDL_Quit();
     
-    const window = c.SDL_CreateWindow("My Game", c.SDL_WINDOWPOS_CENTERED, c.SDL_WINDOWPOS_CENTERED, WIDTH * SCALE, HEIGHT * SCALE, c.SDL_WINDOW_SHOWN) orelse {
+    const window = c.SDL_CreateWindow("My Game", c.SDL_WINDOWPOS_CENTERED, c.SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, c.SDL_WINDOW_SHOWN) orelse {
         c.SDL_Log("Unable to create window: %s", c.SDL_GetError());
         return;
     }; 
@@ -25,7 +24,6 @@ pub fn main() !void {
         return;
     };
     defer c.SDL_DestroyRenderer(renderer);
-    _ = c.SDL_RenderSetLogicalSize(renderer, WIDTH, HEIGHT);
     
     // Docs:
     // http://wiki.libsdl.org/SDL_CreateRGBSurfaceWithFormatFrom
@@ -34,8 +32,8 @@ pub fn main() !void {
     var h: c_int = undefined;
     var n: c_int = undefined;
     var format: c_int = c.STBI_rgb_alpha;
-    const pixels = c.stbi_load("data/sprites.png", &w, &h,&n, format) orelse {
-        c.SDL_Log("Unable to open file: %s", "data/sprites.png");
+    const pixels = c.stbi_load("data/playerShip1_red.png", &w, &h,&n, format) orelse {
+        c.SDL_Log("Unable to open file: %s", "data/playerShip1_red.png");
         return;
     };
     defer c.stbi_image_free(pixels);
@@ -50,8 +48,7 @@ pub fn main() !void {
     c.SDL_FreeSurface(tile_surface);
     tile_surface = null;
     defer c.SDL_DestroyTexture(tile_texture);
-    var rect = c.SDL_Rect{ .x = 0, .y = 0, .w = w, .h = h };
-    
+    var rect = c.SDL_Rect{ .x = @divTrunc(WIDTH-w, 2), .y = @divTrunc(HEIGHT-h, 2), .w = w, .h = h };
     
     c.SDL_Log("Window and Renderer created");
     
