@@ -16,9 +16,9 @@ pub fn build(b: *Builder) void {
     exe.setBuildMode(mode);
 
     exe.addIncludeDir("deps/include");
+    exe.addCSourceFile("deps/src/stb_image.c", &[_][]const u8{"-std=c99"});
     exe.addLibPath("deps/lib");
     exe.linkSystemLibrary("SDL2");
-    exe.linkSystemLibrary("SDL2_Image");
     exe.linkSystemLibrary("c");
     exe.setTarget(.{
         .cpu_arch = .x86_64,

@@ -1,9 +1,7 @@
 const c = @cImport({
     @cInclude("SDL2/SDL.h");
-    @cInclude("SDL2/SDL_image.h");
+    @cInclude("stb_image.h");
 });
-
-const std = @import("std");
 
 const WIDTH = 320;
 const HEIGHT = 180;
@@ -15,14 +13,6 @@ pub fn main() !void {
         return;
     }
     defer c.SDL_Quit();
-    
-    const flags = c.IMG_INIT_JPG | c.IMG_INIT_PNG;
-    const img_init = c.IMG_Init(flags);
-    if (img_init & flags != flags) {
-        c.SDL_Log("Unable to initialise SDL_Image: %s", c.IMG_GetError());
-        return;
-    }
-    defer c.IMG_Quit();
     
     const window = c.SDL_CreateWindow("My Game", c.SDL_WINDOWPOS_CENTERED, c.SDL_WINDOWPOS_CENTERED, WIDTH * SCALE, HEIGHT * SCALE, c.SDL_WINDOW_SHOWN) orelse {
         c.SDL_Log("Unable to create window: %s", c.SDL_GetError());
@@ -37,15 +27,31 @@ pub fn main() !void {
     defer c.SDL_DestroyRenderer(renderer);
     _ = c.SDL_RenderSetLogicalSize(renderer, WIDTH, HEIGHT);
     
-    const tile_texture = c.IMG_LoadTexture(renderer, "data/sprites.png") orelse {
-        c.SDL_Log("Unable to create texture: %s", c.IMG_GetError());
+    // Docs:
+    // http://wiki.libsdl.org/SDL_CreateRGBSurfaceWithFormatFrom
+    // http://wiki.libsdl.org/SDL_CreateTextureFromSurface
+    var w: c_int = undefined;
+    var h: c_int = undefined;
+    var n: c_int = undefined;
+    var format: c_int = c.STBI_rgb_alpha;
+    const pixels = c.stbi_load("data/sprites.png", &w, &h,&n, format) orelse {
+        c.SDL_Log("Unable to open file: %s", "data/sprites.png");
         return;
     };
+    defer c.stbi_image_free(pixels);
+    var tile_surface = c.SDL_CreateRGBSurfaceWithFormatFrom(pixels, w, h, 32, 4 * w, c.SDL_PIXELFORMAT_RGBA32) orelse {
+        c.SDL_Log("Unable to create surface: %s", c.SDL_GetError());
+        return;
+    };
+    const tile_texture = c.SDL_CreateTextureFromSurface(renderer, tile_surface) orelse {
+        c.SDL_Log("Unable to create texture: %s", c.SDL_GetError());
+        return;
+    };
+    c.SDL_FreeSurface(tile_surface);
+    tile_surface = null;
     defer c.SDL_DestroyTexture(tile_texture);
-    var w: c_int = 0;
-    var h: c_int = 0;
-    _ = c.SDL_QueryTexture(tile_texture, null, null, &w, &h);
     var rect = c.SDL_Rect{ .x = 0, .y = 0, .w = w, .h = h };
+    
     
     c.SDL_Log("Window and Renderer created");
     
